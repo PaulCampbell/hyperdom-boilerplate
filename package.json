@@ -30,7 +30,7 @@
   },
   "scripts": {
     "test": "karma start",
-    "watch": "mkdir -p dist && cp app/index.html dist/index.html && watchify app/index.js -v --debug --extension .jsx -t babelify -o 'exorcist dist/index.max.js.map > dist/index.js'",
+    "watch": "mkdir -p dist && cp src/index.html dist/index.html && watchify src/index.js -v --debug --extension .jsx -t babelify -o 'exorcist dist/index.max.js.map > dist/index.js'",
     "start": "npm run watch | live-server ./dist"
   },
   "babel": {
