@@ -33,6 +33,16 @@ class App {
     </div>
   }
 
+  addContact() {
+    if(this.newContactName) {
+      this.contacts.push({ name: this.newContactName });
+      delete this.newContactName;
+      delete this.addContactError;
+    } else {
+      this.addContactError = true
+    }
+  }
+
   renderContacts() {
     return <div class='contactsTab'>
       <h1>Contacts</h1>
@@ -42,6 +52,17 @@ class App {
         })
       }
       </ul>
+      <form onsubmit={ (e) => { e.preventDefault(); this.addContact() } }>
+        <label for='newContact'>Add a contact</label>
+        <input id='newContact' class='newContact' binding={ [this, 'newContactName'] } />
+        <input type="submit" class='addContact' value="Add contact" />
+        { this.addContactError ?
+          <div class='addContact-error'>
+            Enter a name
+          </div>
+          : undefined
+        }
+      </form>
     </div>
   }
 

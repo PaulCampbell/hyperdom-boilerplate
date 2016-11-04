@@ -15,6 +15,15 @@ module.exports = browser.component({
   contactsTab: browser.find('.contactsTab').component({
     contact: function(name) {
       return this.find('.contactsList-contact', {exactText: name})
+    },
+    newContact: function() {
+      return this.find('.newContact');
+    },
+    addContact: function() {
+      return this.find('.addContact');
+    },
+    addContactError: function() {
+      return this.find('.addContact-error');
     }
   })
 })
