@@ -30,9 +30,8 @@
   },
   "scripts": {
     "test": "karma start",
-    "compile-js": "mkdir -p dist && browserify index.js --debug --extension .jsx -t babelify | exorcist dist/index.max.js.map > dist/index.max.js && uglifyjs dist/index.max.js --in-source-map dist/index.max.js.map --source-map dist/index.js.map --source-map-url index.js.map -o dist/index.js -cm",
-    "watch": "mkdir -p dist && watchify index.js -v --debug --extension .jsx -t babelify -o 'exorcist dist/index.max.js.map > dist/index.js'",
-    "start": "npm run watch | live-server"
+    "watch": "mkdir -p dist && cp app/index.html dist/index.html && watchify app/index.js -v --debug --extension .jsx -t babelify -o 'exorcist dist/index.max.js.map > dist/index.js'",
+    "start": "npm run watch | live-server ./dist"
   },
   "babel": {
     "env": {

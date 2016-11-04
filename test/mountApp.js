@@ -1,5 +1,5 @@
 const createTestDiv = require('./createTestDiv');
-const App = require('../app');
+const App = require('../app/app');
 const hyperdom = require('hyperdom');
 
 var hyperdomAttachment;
