@@ -14,22 +14,28 @@ There's no server... This is just for your front ends.
 
 ## Get started
 
-*Clone the repo*
+**Clone the repo**
 
 `git clone http://github.com/paulcampbell/hyperdom-boilerplate`
 
-*Install the dependencies*
+**Install the dependencies**
 
 `npm install`
 
-*Run the tests*
+**Run the tests**
 
 `npm test`
 
-*Development mode with live reload*
+**Development mode with live reload**
 
 `npm start`
 
 (hit up http://localhost:8080, yeah?)
 
+**Deploy it to a github pages**
 
+got it in a github repository? Excellent. Run this to publish your app to gihub pages:
+
+`npm run deploy`
+
+now check it out... somewhere like this [https://paulcampbell.github.io/hyperdom-boilerplate/](https://paulcampbell.github.io/hyperdom-boilerplate/)
