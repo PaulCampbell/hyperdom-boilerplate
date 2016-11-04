@@ -1,6 +1,6 @@
 # Hyperdom boilerplate
 
-A minimal Hyperdom application starter kit.
+A minimal [Hyperdom](https://github.com/featurist/hyperdom "hyperdom") application starter kit.
 
 ## What you get
 
