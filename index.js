@@ -1,207 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-'use strict';
 
-var _jsxFileName = '/Users/paulcampbell/_src/hyperdom_boilerplate/app/app.js';
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-/** @jsx hyperdom.jsx */
-var hyperdom = require('hyperdom');
-
-var tabs = [{ name: 'Home', renderMethod: 'renderHome', id: 'home' }, { name: 'Contacts', renderMethod: 'renderContacts', id: 'contacts' }];
-
-var App = function () {
-  function App() {
-    _classCallCheck(this, App);
-
-    this.currentTab = this.findTabById('home');
-    this.contacts = [{ name: 'Jimmy' }, { name: 'Robert' }, { name: 'John Paul' }, { name: 'John' }];
-  }
-
-  App.prototype.setTab = function setTab(tabId) {
-    this.currentTab = this.findTabById(tabId);
-    history.pushState({ tab: tabId }, this.currentTab.title, '/' + tabId);
-  };
-
-  App.prototype.findTabById = function findTabById(tabId) {
-    return tabs.filter(function (tab) {
-      return tab.id === tabId;
-    })[0];
-  };
-
-  App.prototype.renderHome = function renderHome() {
-    return hyperdom.jsx(
-      'div',
-      { 'class': 'homeTab', __source: {
-          fileName: _jsxFileName,
-          lineNumber: 30
-        }
-      },
-      hyperdom.jsx(
-        'h1',
-        {
-          __source: {
-            fileName: _jsxFileName,
-            lineNumber: 31
-          }
-        },
-        'Hyperdom Boilerplate'
-      ),
-      hyperdom.jsx(
-        'p',
-        {
-          __source: {
-            fileName: _jsxFileName,
-            lineNumber: 32
-          }
-        },
-        'Now then'
-      )
-    );
-  };
-
-  App.prototype.renderContacts = function renderContacts() {
-    return hyperdom.jsx(
-      'div',
-      { 'class': 'contactsTab', __source: {
-          fileName: _jsxFileName,
-          lineNumber: 37
-        }
-      },
-      hyperdom.jsx(
-        'h1',
-        {
-          __source: {
-            fileName: _jsxFileName,
-            lineNumber: 38
-          }
-        },
-        'Contacts'
-      ),
-      hyperdom.jsx(
-        'ul',
-        { 'class': 'contactsList', __source: {
-            fileName: _jsxFileName,
-            lineNumber: 39
-          }
-        },
-        this.contacts.map(function (c) {
-          return hyperdom.jsx(
-            'li',
-            { 'class': 'contactsList-contact', __source: {
-                fileName: _jsxFileName,
-                lineNumber: 41
-              }
-            },
-            c.name
-          );
-        })
-      )
-    );
-  };
-
-  App.prototype.renderPage = function renderPage(currentTab) {
-    return hyperdom.jsx(
-      'div',
-      {
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 49
-        }
-      },
-      this[currentTab.renderMethod]()
-    );
-  };
-
-  App.prototype.render = function render() {
-    var _this = this;
-
-    return hyperdom.jsx(
-      'div',
-      {
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 55
-        }
-      },
-      hyperdom.jsx(
-        'nav',
-        {
-          __source: {
-            fileName: _jsxFileName,
-            lineNumber: 56
-          }
-        },
-        hyperdom.jsx(
-          'ul',
-          {
-            __source: {
-              fileName: _jsxFileName,
-              lineNumber: 57
-            }
-          },
-          hyperdom.jsx(
-            'li',
-            {
-              __source: {
-                fileName: _jsxFileName,
-                lineNumber: 58
-              }
-            },
-            hyperdom.jsx(
-              'a',
-              { 'class': 'homeLink', href: '#', onclick: function onclick(ev) {
-                  ev.preventDefault();_this.setTab('home');
-                }, __source: {
-                  fileName: _jsxFileName,
-                  lineNumber: 58
-                }
-              },
-              'Home'
-            )
-          ),
-          hyperdom.jsx(
-            'li',
-            {
-              __source: {
-                fileName: _jsxFileName,
-                lineNumber: 59
-              }
-            },
-            hyperdom.jsx(
-              'a',
-              { 'class': 'contactsLink', href: '#', onclick: function onclick(ev) {
-                  ev.preventDefault();_this.setTab('contacts');
-                }, __source: {
-                  fileName: _jsxFileName,
-                  lineNumber: 59
-                }
-              },
-              'Contacts'
-            )
-          )
-        )
-      ),
-      this.renderPage(this.currentTab)
-    );
-  };
-
-  return App;
-}();
-
-module.exports = App;
-
-},{"hyperdom":9}],2:[function(require,module,exports){
-'use strict';
-
-var App = require('./app');
-var hyperdom = require('hyperdom');
-
-hyperdom.append(document.body, new App({}));
-
-},{"./app":1,"hyperdom":9}],3:[function(require,module,exports){
-
-},{}],4:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 /*!
  * Cross-Browser Split 1.1.1
  * Copyright 2007-2012 Steven Levithan <stevenlevithan.com>
@@ -309,7 +108,7 @@ module.exports = (function split(undef) {
   return self;
 })();
 
-},{}],5:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 (function (global){
 var topLevel = typeof global !== 'undefined' ? global :
     typeof window !== 'undefined' ? window : {}
@@ -329,7 +128,7 @@ if (typeof document !== 'undefined') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"min-document":3}],6:[function(require,module,exports){
+},{"min-document":1}],4:[function(require,module,exports){
 var VText = require("virtual-dom/vnode/vtext.js")
 var domComponent = require('./domComponent');
 var hyperdom = require('.');
@@ -469,7 +268,7 @@ module.exports = function (state, vdom) {
 
 module.exports.ComponentWidget = ComponentWidget;
 
-},{".":9,"./deprecations":7,"./domComponent":8,"virtual-dom/vnode/vtext.js":43}],7:[function(require,module,exports){
+},{".":7,"./deprecations":5,"./domComponent":6,"virtual-dom/vnode/vtext.js":41}],5:[function(require,module,exports){
 function deprecationWarning() {
   var warningIssued = false;
 
@@ -491,7 +290,7 @@ module.exports = {
   norefresh: deprecationWarning()
 };
 
-},{}],8:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var createElement = require('virtual-dom/create-element');
 var diff = require('virtual-dom/diff');
 var patch = require('virtual-dom/patch');
@@ -550,7 +349,7 @@ function domComponent(options) {
 
 module.exports = domComponent;
 
-},{"./isVdom":10,"./toVdom":18,"virtual-dom/create-element":23,"virtual-dom/diff":24,"virtual-dom/patch":25}],9:[function(require,module,exports){
+},{"./isVdom":8,"./toVdom":16,"virtual-dom/create-element":21,"virtual-dom/diff":22,"virtual-dom/patch":23}],7:[function(require,module,exports){
 if (typeof window === 'object') {
   console.log('\n\ncreated with \uD83D\uDE80 using https://github.com/featurist/hyperdom\n\n\n');
 }
@@ -583,7 +382,7 @@ exports.currentRender = function () {
   return exports._currentRender;
 };
 
-},{"./component":6,"./deprecations":7,"./rendering":14,"./windowEvents":21}],10:[function(require,module,exports){
+},{"./component":4,"./deprecations":5,"./rendering":12,"./windowEvents":19}],8:[function(require,module,exports){
 var virtualDomVersion = require("virtual-dom/vnode/version")
 
 module.exports = function(x) {
@@ -595,7 +394,7 @@ module.exports = function(x) {
   }
 };
 
-},{"virtual-dom/vnode/version":40}],11:[function(require,module,exports){
+},{"virtual-dom/vnode/version":38}],9:[function(require,module,exports){
 module.exports = function (model, property) {
   var hyperdomMeta = model._hyperdomMeta;
 
@@ -617,7 +416,7 @@ module.exports = function (model, property) {
   }
 };
 
-},{}],12:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 var hyperdomMeta = require('./meta');
 var runRender = require('./runRender');
 var hyperdom = require('.');
@@ -753,7 +552,7 @@ Mount.prototype.remove = function () {
 
 module.exports = Mount;
 
-},{".":9,"./meta":11,"./runRender":15,"./set":16}],13:[function(require,module,exports){
+},{".":7,"./meta":9,"./runRender":13,"./set":14}],11:[function(require,module,exports){
 var simplePromise = require('./simplePromise');
 
 function Render(mount) {
@@ -764,7 +563,7 @@ function Render(mount) {
 
 module.exports = Render;
 
-},{"./simplePromise":17}],14:[function(require,module,exports){
+},{"./simplePromise":15}],12:[function(require,module,exports){
 (function (global){
 var h = require('./vhtml');
 var domComponent = require('./domComponent');
@@ -1414,7 +1213,7 @@ function generateClassName(obj) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{".":9,"./deprecations":7,"./domComponent":8,"./meta":11,"./mount":12,"./runRender":15,"./toVdom":18,"./vhtml":19,"./viewModel":20,"virtual-dom/virtual-hyperscript/parse-tag":33}],15:[function(require,module,exports){
+},{".":7,"./deprecations":5,"./domComponent":6,"./meta":9,"./mount":10,"./runRender":13,"./toVdom":16,"./vhtml":17,"./viewModel":18,"virtual-dom/virtual-hyperscript/parse-tag":31}],13:[function(require,module,exports){
 var hyperdom = require('.');
 var Render = require('./render');
 var rendering = require('./rendering');
@@ -1442,7 +1241,7 @@ module.exports = function(mount, fn) {
   }
 };
 
-},{".":9,"./render":13,"./rendering":14}],16:[function(require,module,exports){
+},{".":7,"./render":11,"./rendering":12}],14:[function(require,module,exports){
 if (typeof Set === 'function') {
   module.exports = Set;
 } else {
@@ -1470,7 +1269,7 @@ if (typeof Set === 'function') {
   };
 }
 
-},{}],17:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 function SimplePromise () {
   this.listeners = [];
 }
@@ -1500,7 +1299,7 @@ module.exports = function () {
   return new SimplePromise();
 };
 
-},{}],18:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var vtext = require("virtual-dom/vnode/vtext.js")
 var rendering = require('./rendering');
 var isVdom = require('./isVdom');
@@ -1541,7 +1340,7 @@ module.exports.recursive = function (child) {
   return children;
 };
 
-},{"./isVdom":10,"./rendering":14,"virtual-dom/vnode/vtext.js":43}],19:[function(require,module,exports){
+},{"./isVdom":8,"./rendering":12,"virtual-dom/vnode/vtext.js":41}],17:[function(require,module,exports){
 'use strict';
 
 var VNode = require('virtual-dom/vnode/vnode.js');
@@ -1579,7 +1378,7 @@ function h(tagName, props, children) {
   return new VNode(tag, props, children, key, namespace);
 }
 
-},{"virtual-dom/virtual-hyperscript/hooks/soft-set-hook.js":32,"virtual-dom/vnode/is-vhook":36,"virtual-dom/vnode/vnode.js":41}],20:[function(require,module,exports){
+},{"virtual-dom/virtual-hyperscript/hooks/soft-set-hook.js":30,"virtual-dom/vnode/is-vhook":34,"virtual-dom/vnode/vnode.js":39}],18:[function(require,module,exports){
 var domComponent = require('./domComponent');
 var hyperdomMeta = require('./meta');
 var hyperdom = require('.');
@@ -1668,7 +1467,7 @@ ViewModel.prototype.destroy = function (element) {
 
 module.exports = ViewModel;
 
-},{".":9,"./domComponent":8,"./meta":11}],21:[function(require,module,exports){
+},{".":7,"./domComponent":6,"./meta":9}],19:[function(require,module,exports){
 var domComponent = require('./domComponent');
 var rendering = require('./rendering');
 var VText = require("virtual-dom/vnode/vtext.js")
@@ -1748,29 +1547,29 @@ module.exports = function (attributes) {
   return new WindowWidget(attributes);
 };
 
-},{"./domComponent":8,"./rendering":14,"virtual-dom/vnode/vtext.js":43}],22:[function(require,module,exports){
+},{"./domComponent":6,"./rendering":12,"virtual-dom/vnode/vtext.js":41}],20:[function(require,module,exports){
 "use strict";
 
 module.exports = function isObject(x) {
 	return typeof x === "object" && x !== null;
 };
 
-},{}],23:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var createElement = require("./vdom/create-element.js")
 
 module.exports = createElement
 
-},{"./vdom/create-element.js":27}],24:[function(require,module,exports){
+},{"./vdom/create-element.js":25}],22:[function(require,module,exports){
 var diff = require("./vtree/diff.js")
 
 module.exports = diff
 
-},{"./vtree/diff.js":45}],25:[function(require,module,exports){
+},{"./vtree/diff.js":43}],23:[function(require,module,exports){
 var patch = require("./vdom/patch.js")
 
 module.exports = patch
 
-},{"./vdom/patch.js":30}],26:[function(require,module,exports){
+},{"./vdom/patch.js":28}],24:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook.js")
 
@@ -1869,7 +1668,7 @@ function getPrototype(value) {
     }
 }
 
-},{"../vnode/is-vhook.js":36,"is-object":22}],27:[function(require,module,exports){
+},{"../vnode/is-vhook.js":34,"is-object":20}],25:[function(require,module,exports){
 var document = require("global/document")
 
 var applyProperties = require("./apply-properties")
@@ -1917,7 +1716,7 @@ function createElement(vnode, opts) {
     return node
 }
 
-},{"../vnode/handle-thunk.js":34,"../vnode/is-vnode.js":37,"../vnode/is-vtext.js":38,"../vnode/is-widget.js":39,"./apply-properties":26,"global/document":5}],28:[function(require,module,exports){
+},{"../vnode/handle-thunk.js":32,"../vnode/is-vnode.js":35,"../vnode/is-vtext.js":36,"../vnode/is-widget.js":37,"./apply-properties":24,"global/document":3}],26:[function(require,module,exports){
 // Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
 // We don't want to read all of the DOM nodes in the tree so we use
 // the in-order tree indexing to eliminate recursion down certain branches.
@@ -2004,7 +1803,7 @@ function ascending(a, b) {
     return a > b ? 1 : -1
 }
 
-},{}],29:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var applyProperties = require("./apply-properties")
 
 var isWidget = require("../vnode/is-widget.js")
@@ -2157,7 +1956,7 @@ function replaceRoot(oldRoot, newRoot) {
     return newRoot;
 }
 
-},{"../vnode/is-widget.js":39,"../vnode/vpatch.js":42,"./apply-properties":26,"./update-widget":31}],30:[function(require,module,exports){
+},{"../vnode/is-widget.js":37,"../vnode/vpatch.js":40,"./apply-properties":24,"./update-widget":29}],28:[function(require,module,exports){
 var document = require("global/document")
 var isArray = require("x-is-array")
 
@@ -2239,7 +2038,7 @@ function patchIndices(patches) {
     return indices
 }
 
-},{"./create-element":27,"./dom-index":28,"./patch-op":29,"global/document":5,"x-is-array":46}],31:[function(require,module,exports){
+},{"./create-element":25,"./dom-index":26,"./patch-op":27,"global/document":3,"x-is-array":44}],29:[function(require,module,exports){
 var isWidget = require("../vnode/is-widget.js")
 
 module.exports = updateWidget
@@ -2256,7 +2055,7 @@ function updateWidget(a, b) {
     return false
 }
 
-},{"../vnode/is-widget.js":39}],32:[function(require,module,exports){
+},{"../vnode/is-widget.js":37}],30:[function(require,module,exports){
 'use strict';
 
 module.exports = SoftSetHook;
@@ -2275,7 +2074,7 @@ SoftSetHook.prototype.hook = function (node, propertyName) {
     }
 };
 
-},{}],33:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 'use strict';
 
 var split = require('browser-split');
@@ -2331,7 +2130,7 @@ function parseTag(tag, props) {
     return props.namespace ? tagName : tagName.toUpperCase();
 }
 
-},{"browser-split":4}],34:[function(require,module,exports){
+},{"browser-split":2}],32:[function(require,module,exports){
 var isVNode = require("./is-vnode")
 var isVText = require("./is-vtext")
 var isWidget = require("./is-widget")
@@ -2373,14 +2172,14 @@ function renderThunk(thunk, previous) {
     return renderedThunk
 }
 
-},{"./is-thunk":35,"./is-vnode":37,"./is-vtext":38,"./is-widget":39}],35:[function(require,module,exports){
+},{"./is-thunk":33,"./is-vnode":35,"./is-vtext":36,"./is-widget":37}],33:[function(require,module,exports){
 module.exports = isThunk
 
 function isThunk(t) {
     return t && t.type === "Thunk"
 }
 
-},{}],36:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 module.exports = isHook
 
 function isHook(hook) {
@@ -2389,7 +2188,7 @@ function isHook(hook) {
        typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
 }
 
-},{}],37:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualNode
@@ -2398,7 +2197,7 @@ function isVirtualNode(x) {
     return x && x.type === "VirtualNode" && x.version === version
 }
 
-},{"./version":40}],38:[function(require,module,exports){
+},{"./version":38}],36:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualText
@@ -2407,17 +2206,17 @@ function isVirtualText(x) {
     return x && x.type === "VirtualText" && x.version === version
 }
 
-},{"./version":40}],39:[function(require,module,exports){
+},{"./version":38}],37:[function(require,module,exports){
 module.exports = isWidget
 
 function isWidget(w) {
     return w && w.type === "Widget"
 }
 
-},{}],40:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 module.exports = "2"
 
-},{}],41:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 var version = require("./version")
 var isVNode = require("./is-vnode")
 var isWidget = require("./is-widget")
@@ -2491,7 +2290,7 @@ function VirtualNode(tagName, properties, children, key, namespace) {
 VirtualNode.prototype.version = version
 VirtualNode.prototype.type = "VirtualNode"
 
-},{"./is-thunk":35,"./is-vhook":36,"./is-vnode":37,"./is-widget":39,"./version":40}],42:[function(require,module,exports){
+},{"./is-thunk":33,"./is-vhook":34,"./is-vnode":35,"./is-widget":37,"./version":38}],40:[function(require,module,exports){
 var version = require("./version")
 
 VirtualPatch.NONE = 0
@@ -2515,7 +2314,7 @@ function VirtualPatch(type, vNode, patch) {
 VirtualPatch.prototype.version = version
 VirtualPatch.prototype.type = "VirtualPatch"
 
-},{"./version":40}],43:[function(require,module,exports){
+},{"./version":38}],41:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = VirtualText
@@ -2527,7 +2326,7 @@ function VirtualText(text) {
 VirtualText.prototype.version = version
 VirtualText.prototype.type = "VirtualText"
 
-},{"./version":40}],44:[function(require,module,exports){
+},{"./version":38}],42:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook")
 
@@ -2587,7 +2386,7 @@ function getPrototype(value) {
   }
 }
 
-},{"../vnode/is-vhook":36,"is-object":22}],45:[function(require,module,exports){
+},{"../vnode/is-vhook":34,"is-object":20}],43:[function(require,module,exports){
 var isArray = require("x-is-array")
 
 var VPatch = require("../vnode/vpatch")
@@ -3016,7 +2815,7 @@ function appendPatch(apply, patch) {
     }
 }
 
-},{"../vnode/handle-thunk":34,"../vnode/is-thunk":35,"../vnode/is-vnode":37,"../vnode/is-vtext":38,"../vnode/is-widget":39,"../vnode/vpatch":42,"./diff-props":44,"x-is-array":46}],46:[function(require,module,exports){
+},{"../vnode/handle-thunk":32,"../vnode/is-thunk":33,"../vnode/is-vnode":35,"../vnode/is-vtext":36,"../vnode/is-widget":37,"../vnode/vpatch":40,"./diff-props":42,"x-is-array":44}],44:[function(require,module,exports){
 var nativeIsArray = Array.isArray
 var toString = Object.prototype.toString
 
@@ -3026,5 +2825,206 @@ function isArray(obj) {
     return toString.call(obj) === "[object Array]"
 }
 
-},{}]},{},[2])
+},{}],45:[function(require,module,exports){
+'use strict';
+
+var _jsxFileName = '/Users/paulcampbell/_src/hyperdom_boilerplate/src/app.js';
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+/** @jsx hyperdom.jsx */
+var hyperdom = require('hyperdom');
+
+var tabs = [{ name: 'Home', renderMethod: 'renderHome', id: 'home' }, { name: 'Contacts', renderMethod: 'renderContacts', id: 'contacts' }];
+
+var App = function () {
+  function App() {
+    _classCallCheck(this, App);
+
+    this.currentTab = this.findTabById('home');
+    this.contacts = [{ name: 'Jimmy' }, { name: 'Robert' }, { name: 'John Paul' }, { name: 'John' }];
+  }
+
+  App.prototype.setTab = function setTab(tabId) {
+    this.currentTab = this.findTabById(tabId);
+    history.pushState({ tab: tabId }, this.currentTab.title, '/' + tabId);
+  };
+
+  App.prototype.findTabById = function findTabById(tabId) {
+    return tabs.filter(function (tab) {
+      return tab.id === tabId;
+    })[0];
+  };
+
+  App.prototype.renderHome = function renderHome() {
+    return hyperdom.jsx(
+      'div',
+      { 'class': 'homeTab', __source: {
+          fileName: _jsxFileName,
+          lineNumber: 30
+        }
+      },
+      hyperdom.jsx(
+        'h1',
+        {
+          __source: {
+            fileName: _jsxFileName,
+            lineNumber: 31
+          }
+        },
+        'Hyperdom Boilerplate'
+      ),
+      hyperdom.jsx(
+        'p',
+        {
+          __source: {
+            fileName: _jsxFileName,
+            lineNumber: 32
+          }
+        },
+        'Now then'
+      )
+    );
+  };
+
+  App.prototype.renderContacts = function renderContacts() {
+    return hyperdom.jsx(
+      'div',
+      { 'class': 'contactsTab', __source: {
+          fileName: _jsxFileName,
+          lineNumber: 37
+        }
+      },
+      hyperdom.jsx(
+        'h1',
+        {
+          __source: {
+            fileName: _jsxFileName,
+            lineNumber: 38
+          }
+        },
+        'Contacts'
+      ),
+      hyperdom.jsx(
+        'ul',
+        { 'class': 'contactsList', __source: {
+            fileName: _jsxFileName,
+            lineNumber: 39
+          }
+        },
+        this.contacts.map(function (c) {
+          return hyperdom.jsx(
+            'li',
+            { 'class': 'contactsList-contact', __source: {
+                fileName: _jsxFileName,
+                lineNumber: 41
+              }
+            },
+            c.name
+          );
+        })
+      )
+    );
+  };
+
+  App.prototype.renderPage = function renderPage(currentTab) {
+    return hyperdom.jsx(
+      'div',
+      {
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 49
+        }
+      },
+      this[currentTab.renderMethod]()
+    );
+  };
+
+  App.prototype.render = function render() {
+    var _this = this;
+
+    return hyperdom.jsx(
+      'div',
+      {
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 55
+        }
+      },
+      hyperdom.jsx(
+        'nav',
+        {
+          __source: {
+            fileName: _jsxFileName,
+            lineNumber: 56
+          }
+        },
+        hyperdom.jsx(
+          'ul',
+          {
+            __source: {
+              fileName: _jsxFileName,
+              lineNumber: 57
+            }
+          },
+          hyperdom.jsx(
+            'li',
+            {
+              __source: {
+                fileName: _jsxFileName,
+                lineNumber: 58
+              }
+            },
+            hyperdom.jsx(
+              'a',
+              { 'class': 'homeLink', href: '#', onclick: function onclick(ev) {
+                  ev.preventDefault();_this.setTab('home');
+                }, __source: {
+                  fileName: _jsxFileName,
+                  lineNumber: 58
+                }
+              },
+              'Home'
+            )
+          ),
+          hyperdom.jsx(
+            'li',
+            {
+              __source: {
+                fileName: _jsxFileName,
+                lineNumber: 59
+              }
+            },
+            hyperdom.jsx(
+              'a',
+              { 'class': 'contactsLink', href: '#', onclick: function onclick(ev) {
+                  ev.preventDefault();_this.setTab('contacts');
+                }, __source: {
+                  fileName: _jsxFileName,
+                  lineNumber: 59
+                }
+              },
+              'Contacts'
+            )
+          )
+        )
+      ),
+      this.renderPage(this.currentTab)
+    );
+  };
+
+  return App;
+}();
+
+module.exports = App;
+
+},{"hyperdom":7}],46:[function(require,module,exports){
+'use strict';
+
+var App = require('./app');
+var hyperdom = require('hyperdom');
+
+hyperdom.append(document.body, new App({}));
+
+},{"./app":45,"hyperdom":7}]},{},[46])
 //# sourceMappingURL=index.max.js.map
