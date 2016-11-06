@@ -4,7 +4,7 @@ A minimal [Hyperdom](https://github.com/featurist/hyperdom "hyperdom") applicati
 
 ## What you get
 
-A simple single page app starting point to kick off your hyperdom single page app.
+A simple single page app starting point to kick off your hyperdom app.
 
 There's no server... This is just for your front ends.
 
