@@ -10,6 +10,9 @@ There's no server... This is just for your front ends.
 
   * Hyperdom single page app with a couple of views
   * Testing setup with [browser-monkey](https://github.com/featurist/browser-monkey "Browser Monkey") (It's fast and it's ace!)
+  * Less for styles
+  * ES6 transpiling and JSX transformations using Babel
+  * Module bundling with Browserify
 
 
 ## Get started
@@ -39,3 +42,15 @@ got it in a github repository? Excellent. Run this to publish your app to gihub 
 `npm run deploy`
 
 now check it out... somewhere like this [https://paulcampbell.github.io/hyperdom-boilerplate/](https://paulcampbell.github.io/hyperdom-boilerplate/)
+
+## Folder structure
+
+```
+  |- dist            # built application ends up here
+  |
+  |- src             # html and javascripts... write your code here
+  |  |- styles       # less stylesheets... add your styles here
+  |
+  |- test            # specs... write your tests here
+```
+
