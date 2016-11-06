@@ -8,7 +8,7 @@ const tabs =  [
 
 class App {
   constructor() {
-    this.currentTab = this.findTabById('home');
+    this.setTab('home');
     this.contacts = [
       { name: 'Jimmy' },
       { name: 'Robert' },
@@ -18,12 +18,8 @@ class App {
   }
 
   setTab(tabId) {
-    this.currentTab = this.findTabById(tabId);
+    this.currentTab = tabs.filter((tab) => tab.id === tabId)[0];
     history.pushState({ tab: tabId }, this.currentTab.title, `/${tabId}`);
-  }
-
-  findTabById(tabId) {
-    return tabs.filter((tab) => tab.id === tabId)[0]
   }
 
   renderHome() {
@@ -37,17 +33,12 @@ class App {
     return <div class='contactsTab'>
       <h1>Contacts</h1>
       <ul class='contactsList'>
-      { this.contacts.map((c) => {
+      {
+        this.contacts.map((c) => {
           return <li class='contactsList-contact'>{ c.name }</li>
         })
       }
       </ul>
-    </div>
-  }
-
-  renderPage(currentTab) {
-    return <div>
-      { this[currentTab.renderMethod]() }
     </div>
   }
 
@@ -59,7 +50,7 @@ class App {
           <li><a class='contactsLink' href="#" onclick={(ev)=> { ev.preventDefault(); this.setTab('contacts'); }}>Contacts</a></li>
         </ul>
       </nav>
-      { this.renderPage(this.currentTab) }
+      { this[this.currentTab.renderMethod]() }
     </div>
   }
 }
