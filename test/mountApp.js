@@ -1,6 +1,7 @@
 const createTestDiv = require('./createTestDiv');
 const App = require('../src/app');
 const hyperdom = require('hyperdom');
+const router = require('hyperdom-router');
 
 var hyperdomAttachment;
 
@@ -9,6 +10,7 @@ class MountApp {
     var url = options && options.href ? options.href : undefined;
 
     setUrl(url);
+    router.start({history: router.hash});
 
     var div = createTestDiv();
 

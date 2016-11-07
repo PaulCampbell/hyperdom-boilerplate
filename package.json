@@ -7,7 +7,8 @@
     "test": "test"
   },
   "dependencies": {
-    "hyperdom": "^0.2.0"
+    "hyperdom": "^0.2.0",
+    "hyperdom-router": "github:paulcampbell/hyperdom-router"
   },
   "devDependencies": {
     "babel-plugin-transform-do-expressions": "^6.8.0",
@@ -33,9 +34,9 @@
   },
   "scripts": {
     "test": "karma start",
-    "watch-js": " npm run watch-css && watchify src/index.js -v --debug --extension .jsx -t babelify -o 'exorcist dist/index.max.js.map > dist/index.js",
+    "watch-js": "watchify src/index.js -v --debug --extension .jsx -t babelify -o 'exorcist dist/index.max.js.map > dist/index.js'",
     "watch-css": "catw -c 'lessc -' 'src/styles/*.less' -o dist/bundle.css -v",
-    "watch": "mkdir -p dist && cp src/index.html dist/index.html && npm run watch-css && npm run watch-js",
+    "watch": "mkdir -p dist && cp src/index.html dist/index.html && npm run watch-css | npm run watch-js",
     "start": "npm run watch | live-server ./dist",
     "deploy": "gh-pages -d dist"
   },
