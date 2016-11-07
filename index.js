@@ -129,6 +129,626 @@ if (typeof document !== 'undefined') {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"min-document":1}],4:[function(require,module,exports){
+var routism = require('routism');
+var hyperdom = require('hyperdom');
+var h = hyperdom.html;
+var refresh;
+
+function Routes() {
+  this.routes = [];
+  this.routesChanged = false;
+}
+
+Routes.prototype.recognise = function (pathname) {
+  if (this.routesChanged) {
+    this.compiledRoutes = routism.compile(this.routes);
+    this.routesChanged = false;
+  }
+
+  return this.compiledRoutes.recognise(pathname);
+};
+
+Routes.prototype.add = function (pattern) {
+  var route = {pattern: pattern};
+  this.routes.push({pattern: pattern, route: route});
+  this.routesChanged = true;
+  return route;
+};
+
+function Router() {
+  this.routes = new Routes();
+}
+
+Router.prototype.start = function (history) {
+  this.history = history;
+  this.history.start();
+  this.started = true;
+};
+
+Router.prototype.stop = function () {
+  if (this.started) {
+    this.history.stop();
+
+    var keys = Object.keys(this);
+    for (var n = 0; n < keys.length; n++) {
+      if (keys[n] != 'routes') {
+        delete this[keys[n]];
+      }
+    }
+  }
+};
+
+Router.prototype.isNotFound = function () {
+  if (this.currentRoute.isNotFound) {
+    return this.currentRoute;
+  }
+};
+
+Router.prototype.makeCurrentRoute = function () {
+  var location = this.history.location();
+  var href = location.pathname + location.search;
+
+  var routeRecognised = this.routes.recognise(location.pathname);
+
+  if (routeRecognised) {
+    var routeParams  = associativeArrayToObject(routeRecognised.params);
+    var searchParams = exports.querystring.parse((location.search || '').substring(1));
+
+    var params = merge(searchParams, routeParams);
+
+    var expandedUrl = expand(routeRecognised.route.pattern, params);
+    var self = this;
+
+    if (this.currentRoute) {
+      this.currentRoute.depart();
+    }
+
+    this.currentRoute = {
+      route: routeRecognised.route,
+      params: params,
+      href: href,
+      expandedUrl: expandedUrl,
+      ondeparture: undefined,
+
+      depart: function () {
+        if (this.ondeparture) {
+          this.ondeparture();
+          this.ondeparture = undefined;
+        }
+      },
+
+      arrive: function () {
+        if (this.onarrival) {
+          this.onarrival(this.params);
+        }
+      },
+
+      setParams: function (params, pushOrReplace) {
+        var url = expand(this.route.pattern, params);
+        self.pushOrReplace(pushOrReplace, url, {refresh: false});
+        this.params = params;
+        if (this.expandedUrl != url) {
+          this.arrive();
+        }
+        this.expandedUrl = url;
+        this.href = url;
+        self.currentHref = url;
+      },
+
+      push: function (params) {
+        this.setParams(params, 'push');
+      },
+
+      replace: function (params) {
+        this.setParams(params, 'replace');
+      }
+    };
+  } else {
+    this.currentRoute = {
+      isNotFound: true,
+      href: href
+    };
+  }
+};
+
+Router.prototype.setupRender = function () {
+  if (h.currentRender && !h.currentRender.routerEstablished) {
+    h.currentRender.routerEstablished = true;
+
+    this.lastHref = this.currentHref;
+
+    var location = this.history.location();
+    var href = location.pathname + location.search;
+    this.currentHref = href;
+
+    this._isNewHref = this.lastHref != this.currentHref;
+
+    if (this._isNewHref) {
+      this.makeCurrentRoute();
+    }
+  }
+};
+
+Router.prototype.isNewHref = function () {
+  return this._isNewHref;
+};
+
+Router.prototype.isCurrentRoute = function (route) {
+  if (this.currentRoute && this.currentRoute.route === route) {
+    return this.currentRoute;
+  }
+};
+
+Router.prototype.add = function (pattern) {
+  return this.routes.add(pattern);
+};
+
+Router.prototype.pushOrReplace = function (pushReplace, url, options) {
+  var refreshAfter = typeof options == 'object' && options.hasOwnProperty('refresh')? options.refresh: true;
+
+  if ((options && options.force) || !this.currentRoute || this.currentRoute.expandedUrl != url) {
+    this.history[pushReplace](url);
+
+    this.currentRoute.depart();
+
+    if (refresh && refreshAfter) {
+      refresh();
+    }
+  }
+};
+
+Router.prototype.push = function (url, options) {
+  this.pushOrReplace('push', url, options);
+};
+
+Router.prototype.replace = function (url, options) {
+  this.pushOrReplace('replace', url, options);
+};
+
+function createRouter() {
+  return new Router();
+}
+
+function escapeRegex(pattern) {
+  return pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
+var splatVariableRegex = /(\:([a-z\-_]+)\\\*)/ig;
+var variableRegex = /(:([-a-z_]+))/ig;
+
+function compilePattern(pattern) {
+  return escapeRegex(pattern)
+    .replace(splatVariableRegex, "(.+)")
+    .replace(variableRegex, "([^\/]+)");
+}
+
+function preparePattern(pattern) {
+  var match;
+  var variableRegex = new RegExp('(:([-a-z_]+))', 'ig');
+  var variables = [];
+
+  while (match = variableRegex.exec(pattern)) {
+    variables.push(match[2]);
+  }
+
+  var patternRegex = new RegExp('^' + compilePattern(pattern));
+
+  return {
+    regex: patternRegex,
+    variables: variables
+  };
+}
+
+function matchUnder(pattern) {
+  var patternVariables = preparePattern(pattern);
+
+  return function (path) {
+    var match = patternVariables.regex.exec(path);
+
+    if (match) {
+      var params = {};
+
+      for (var n = 1; n < match.length; n++) {
+        params[patternVariables.variables[n - 1]] = match[n];
+      }
+
+      return params;
+    }
+  };
+}
+
+var router = createRouter();
+
+exports.start = function (options) {
+  if (!router) {
+    router = createRouter();
+  }
+  router.start((options && options.history) || exports.historyApi);
+};
+
+exports.stop = function () {
+  router.stop();
+};
+
+exports.clear = function () {
+  router.stop();
+  router = undefined;
+};
+
+exports.querystring = {
+  parse: function(search) {
+    var params = {};
+
+    (search || '').split('&').map(function (param) {
+      var v = param.split('=').map(decodeURIComponent);
+      params[v[0]] = v[1];
+    });
+
+    return params;
+  },
+  stringify: function(paramsObject) {
+    var query = Object.keys(paramsObject).map(function (key) {
+      var param = paramToString(paramsObject[key]);
+
+      if (param != '') {
+        return encodeURIComponent(key) + '=' + encodeURIComponent(param);
+      }
+    }).filter(function (param) {
+      return param;
+    }).join('&');
+
+    return query;
+  }
+};
+
+exports.route = function (pattern) {
+  var route = router.add(pattern);
+
+  function routeFn (paramBindings, render) {
+    if (typeof paramBindings === 'function') {
+      render = paramBindings;
+      paramBindings = undefined;
+    }
+
+    router.setupRender();
+
+    var currentRoute = router.started && router.isCurrentRoute(route);
+
+    if (!render) {
+      var params = paramBindings || {};
+      var url = expand(pattern, params);
+
+
+      return {
+        push: function (ev) {
+          if (ev) {
+            ev.preventDefault();
+          }
+
+          router.push(url);
+        },
+
+        replace: function (ev) {
+          if (ev) {
+            ev.preventDefault();
+          }
+
+          router.replace(url);
+        },
+
+        active: currentRoute && currentRoute.expandedUrl == url,
+
+        href: url,
+
+        a: function () {
+          return this.link.apply(this, arguments);
+        },
+
+        link: function () {
+          var options;
+          var content;
+
+          if (arguments[0] && arguments[0].constructor == Object) {
+            options = arguments[0];
+            content = Array.prototype.slice.call(arguments, 1);
+          } else {
+            options = {};
+            content = Array.prototype.slice.call(arguments, 0);
+          }
+
+          options.href = url;
+          options.onclick = this.push.bind(this);
+
+          return h.apply(h, ['a', options].concat(content));
+        }
+      };
+    } else {
+      if (!router.started) {
+        throw new Error("router not started yet, start with require('hyperdom-router').start([history])");
+      }
+
+      refresh = h.refresh;
+      var isNew = router.isNewHref();
+
+      if (currentRoute) {
+        if (paramBindings) {
+          currentRoute.onarrival = paramBindings.onarrival && h.refreshify(paramBindings.onarrival, {refresh: 'promise'});
+          delete paramBindings.onarrival;
+          currentRoute.ondeparture = paramBindings.ondeparture;
+          delete paramBindings.ondeparture;
+          var pushBindings = pushFromBindings(paramBindings);
+
+          if (isNew) {
+            setParamBindings(currentRoute.params, paramBindings);
+            currentRoute.arrive();
+          } else {
+            applyParamBindings(currentRoute.params, paramBindings, pushBindings);
+          }
+        }
+
+        return render(currentRoute.params);
+      }
+    }
+  }
+
+  var _underRegExp;
+  function underRegExp() {
+    if (!_underRegExp) {
+      _underRegExp = matchUnder(pattern);
+    }
+
+    return _underRegExp;
+  }
+
+  routeFn.under = function (_paramBindings, _fn) {
+    var paramBindings, fn;
+
+    if (typeof _paramBindings === 'function') {
+      fn = _paramBindings;
+    } else {
+      paramBindings = _paramBindings;
+      fn = _fn;
+    }
+
+    var params = underRegExp()(router.history.location().pathname);
+
+    if (params && paramBindings && fn) {
+      router.setupRender();
+
+      var pushBindings = pushFromBindings(paramBindings);
+
+      if (router.isNewHref()) {
+        setParamBindings(params, paramBindings);
+      } else {
+        applyParamBindings(router.currentRoute.params, paramBindings, pushBindings);
+      }
+    }
+
+    if (fn) {
+      if (params) {
+        return fn(params);
+      }
+    } else {
+      return {
+        active: !!params
+      };
+    }
+  };
+
+  routeFn.pattern = pattern;
+  
+  return routeFn;
+};
+
+function pushFromBindings(paramBindings) {
+  var pushBindings = paramBindings.push;
+  delete paramBindings.push;
+  return pushBindings;
+}
+
+function setParamBindings(params, paramBindings) {
+  var paramKeys = Object.keys(paramBindings);
+  for (var n = 0; n < paramKeys.length; n++) {
+    var param = paramKeys[n];
+    var value = params[param];
+
+    var paramBinding = paramBindings[param];
+    var binding = h.binding(paramBinding, {refresh: 'promise'})
+    if (binding.set) {
+      binding.set(value);
+    }
+  }
+}
+
+function applyParamBindings(params, paramBindings, pushBindings) {
+  var bindings = Object.keys(paramBindings).map(function (key) {
+    return {
+      key: key,
+      binding: h.binding(paramBindings[key])
+    };
+  });
+
+  var allBindingsHaveGetters = !bindings.some(function (b) {
+    return !b.binding.get;
+  });
+
+  if (allBindingsHaveGetters) {
+    var newParams = {};
+    var push = false;
+
+    var paramKeys = Object.keys(params);
+    for(var n = 0; n < paramKeys.length; n++) {
+      var param = paramKeys[n];
+      newParams[param] = params[param];
+    }
+
+    for(n = 0; n < bindings.length; n++) {
+      var b = bindings[n];
+      if (b.binding.get) {
+        var value = b.binding.get();
+        newParams[b.key] = value;
+
+        if (pushBindings && value != params[b.key]) {
+          push = push || pushBindings[b.key];
+        }
+      }
+    }
+
+    if (push) {
+      router.currentRoute.push(newParams);
+    } else {
+      router.currentRoute.replace(newParams);
+    }
+  }
+}
+
+exports.notFound = function (render) {
+  var notFoundRoute = router.isNotFound();
+
+  if (notFoundRoute) {
+    return render(notFoundRoute.href);
+  }
+};
+
+function associativeArrayToObject(array) {
+  var o = {};
+
+  for(var n = 0; n < array.length; n++) {
+    var pair = array[n];
+    o[pair[0]] = pair[1];
+  }
+
+  return o;
+}
+
+function merge(obj1, obj2) {
+  var o = clone(obj1);
+
+  Object.keys(obj2).forEach(function(key) {
+    o[key] = obj2[key];
+  });
+
+  return o;
+}
+
+function paramToString(p) {
+  if (p === undefined || p === null) {
+    return '';
+  } else {
+    return p;
+  }
+}
+
+function clone(thing) {
+  return JSON.parse(JSON.stringify(thing));
+}
+
+function expand(pattern, params) {
+  var onlyQueryParams = clone(params);
+
+  var url = pattern.replace(/:([a-z_][a-z0-9_]*)\*/gi, function (_, id) {
+    var param = params[id];
+    delete onlyQueryParams[id];
+    return encodeURI(paramToString(param));
+  });
+
+  url = url.replace(/:([a-z_][a-z0-9_]*)/gi, function (_, id) {
+    var param = params[id];
+    delete onlyQueryParams[id];
+    return encodeURIComponent(paramToString(param));
+  });
+
+  var query = exports.querystring.stringify(onlyQueryParams);
+
+  if (query) {
+    return url + '?' + query;
+  } else {
+    return url;
+  }
+}
+
+exports.historyApi = {
+  start: function () {
+    var self = this;
+    if (!this.listening) {
+      window.addEventListener('popstate', function(ev) {
+        if (self.active) {
+          self.popstate = true;
+          self.popstateState = ev.state;
+          if (refresh) {
+            refresh();
+          }
+        }
+      });
+      this.listening = true;
+    }
+
+    this.active = true;
+  },
+  stop: function () {
+    // I _think_ this is a chrome bug
+    // if we removeEventListener then history.back() doesn't work
+    // Chrome Version 43.0.2357.81 (64-bit), Mac OS X 10.10.3
+    // yeah...
+    this.active = false;
+  },
+  location: function () {
+    return window.location;
+  },
+  push: function (url) {
+    window.history.pushState(undefined, undefined, url);
+  },
+  state: function (state) {
+    window.history.replaceState(state);
+  },
+  replace: function (url) {
+    window.history.replaceState(undefined, undefined, url);
+  }
+};
+
+exports.hash = {
+  start: function () {
+    var self = this;
+    if (!this.listening) {
+      this.hashchangeListener = function() {
+        if (!self.pushed) {
+          if (refresh) {
+            refresh();
+          }
+        } else {
+          self.pushed = false;
+        }
+      }
+      window.addEventListener('hashchange', this.hashchangeListener);
+      this.listening = true;
+    }
+  },
+  stop: function () {
+    this.listening = false;
+    window.removeEventListener('hashchange', this.hashchangeListener);
+  },
+  location: function () {
+    var path = window.location.hash || '#';
+
+    var m = /^#(.*?)(\?.*)?$/.exec(path);
+
+    return {
+      pathname: '/' + m[1],
+      search: m[2] || ''
+    }
+  },
+  push: function (url) {
+    this.pushed = true;
+    window.location.hash = url.replace(/^\//, '');
+  },
+  state: function () {
+  },
+  replace: function (url) {
+    return this.push(url);
+  }
+};
+
+},{"hyperdom":8,"routism":22}],5:[function(require,module,exports){
 var VText = require("virtual-dom/vnode/vtext.js")
 var domComponent = require('./domComponent');
 var hyperdom = require('.');
@@ -268,7 +888,7 @@ module.exports = function (state, vdom) {
 
 module.exports.ComponentWidget = ComponentWidget;
 
-},{".":7,"./deprecations":5,"./domComponent":6,"virtual-dom/vnode/vtext.js":41}],5:[function(require,module,exports){
+},{".":8,"./deprecations":6,"./domComponent":7,"virtual-dom/vnode/vtext.js":43}],6:[function(require,module,exports){
 function deprecationWarning() {
   var warningIssued = false;
 
@@ -290,7 +910,7 @@ module.exports = {
   norefresh: deprecationWarning()
 };
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var createElement = require('virtual-dom/create-element');
 var diff = require('virtual-dom/diff');
 var patch = require('virtual-dom/patch');
@@ -349,7 +969,7 @@ function domComponent(options) {
 
 module.exports = domComponent;
 
-},{"./isVdom":8,"./toVdom":16,"virtual-dom/create-element":21,"virtual-dom/diff":22,"virtual-dom/patch":23}],7:[function(require,module,exports){
+},{"./isVdom":9,"./toVdom":17,"virtual-dom/create-element":23,"virtual-dom/diff":24,"virtual-dom/patch":25}],8:[function(require,module,exports){
 if (typeof window === 'object') {
   console.log('\n\ncreated with \uD83D\uDE80 using https://github.com/featurist/hyperdom\n\n\n');
 }
@@ -382,7 +1002,7 @@ exports.currentRender = function () {
   return exports._currentRender;
 };
 
-},{"./component":4,"./deprecations":5,"./rendering":12,"./windowEvents":19}],8:[function(require,module,exports){
+},{"./component":5,"./deprecations":6,"./rendering":13,"./windowEvents":20}],9:[function(require,module,exports){
 var virtualDomVersion = require("virtual-dom/vnode/version")
 
 module.exports = function(x) {
@@ -394,7 +1014,7 @@ module.exports = function(x) {
   }
 };
 
-},{"virtual-dom/vnode/version":38}],9:[function(require,module,exports){
+},{"virtual-dom/vnode/version":40}],10:[function(require,module,exports){
 module.exports = function (model, property) {
   var hyperdomMeta = model._hyperdomMeta;
 
@@ -416,7 +1036,7 @@ module.exports = function (model, property) {
   }
 };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var hyperdomMeta = require('./meta');
 var runRender = require('./runRender');
 var hyperdom = require('.');
@@ -552,7 +1172,7 @@ Mount.prototype.remove = function () {
 
 module.exports = Mount;
 
-},{".":7,"./meta":9,"./runRender":13,"./set":14}],11:[function(require,module,exports){
+},{".":8,"./meta":10,"./runRender":14,"./set":15}],12:[function(require,module,exports){
 var simplePromise = require('./simplePromise');
 
 function Render(mount) {
@@ -563,7 +1183,7 @@ function Render(mount) {
 
 module.exports = Render;
 
-},{"./simplePromise":15}],12:[function(require,module,exports){
+},{"./simplePromise":16}],13:[function(require,module,exports){
 (function (global){
 var h = require('./vhtml');
 var domComponent = require('./domComponent');
@@ -1213,7 +1833,7 @@ function generateClassName(obj) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{".":7,"./deprecations":5,"./domComponent":6,"./meta":9,"./mount":10,"./runRender":13,"./toVdom":16,"./vhtml":17,"./viewModel":18,"virtual-dom/virtual-hyperscript/parse-tag":31}],13:[function(require,module,exports){
+},{".":8,"./deprecations":6,"./domComponent":7,"./meta":10,"./mount":11,"./runRender":14,"./toVdom":17,"./vhtml":18,"./viewModel":19,"virtual-dom/virtual-hyperscript/parse-tag":33}],14:[function(require,module,exports){
 var hyperdom = require('.');
 var Render = require('./render');
 var rendering = require('./rendering');
@@ -1241,7 +1861,7 @@ module.exports = function(mount, fn) {
   }
 };
 
-},{".":7,"./render":11,"./rendering":12}],14:[function(require,module,exports){
+},{".":8,"./render":12,"./rendering":13}],15:[function(require,module,exports){
 if (typeof Set === 'function') {
   module.exports = Set;
 } else {
@@ -1269,7 +1889,7 @@ if (typeof Set === 'function') {
   };
 }
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 function SimplePromise () {
   this.listeners = [];
 }
@@ -1299,7 +1919,7 @@ module.exports = function () {
   return new SimplePromise();
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var vtext = require("virtual-dom/vnode/vtext.js")
 var rendering = require('./rendering');
 var isVdom = require('./isVdom');
@@ -1340,7 +1960,7 @@ module.exports.recursive = function (child) {
   return children;
 };
 
-},{"./isVdom":8,"./rendering":12,"virtual-dom/vnode/vtext.js":41}],17:[function(require,module,exports){
+},{"./isVdom":9,"./rendering":13,"virtual-dom/vnode/vtext.js":43}],18:[function(require,module,exports){
 'use strict';
 
 var VNode = require('virtual-dom/vnode/vnode.js');
@@ -1378,7 +1998,7 @@ function h(tagName, props, children) {
   return new VNode(tag, props, children, key, namespace);
 }
 
-},{"virtual-dom/virtual-hyperscript/hooks/soft-set-hook.js":30,"virtual-dom/vnode/is-vhook":34,"virtual-dom/vnode/vnode.js":39}],18:[function(require,module,exports){
+},{"virtual-dom/virtual-hyperscript/hooks/soft-set-hook.js":32,"virtual-dom/vnode/is-vhook":36,"virtual-dom/vnode/vnode.js":41}],19:[function(require,module,exports){
 var domComponent = require('./domComponent');
 var hyperdomMeta = require('./meta');
 var hyperdom = require('.');
@@ -1467,7 +2087,7 @@ ViewModel.prototype.destroy = function (element) {
 
 module.exports = ViewModel;
 
-},{".":7,"./domComponent":6,"./meta":9}],19:[function(require,module,exports){
+},{".":8,"./domComponent":7,"./meta":10}],20:[function(require,module,exports){
 var domComponent = require('./domComponent');
 var rendering = require('./rendering');
 var VText = require("virtual-dom/vnode/vtext.js")
@@ -1547,29 +2167,128 @@ module.exports = function (attributes) {
   return new WindowWidget(attributes);
 };
 
-},{"./domComponent":6,"./rendering":12,"virtual-dom/vnode/vtext.js":41}],20:[function(require,module,exports){
+},{"./domComponent":7,"./rendering":13,"virtual-dom/vnode/vtext.js":43}],21:[function(require,module,exports){
 "use strict";
 
 module.exports = function isObject(x) {
 	return typeof x === "object" && x !== null;
 };
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
+(function() {
+    var self = this;
+    var variableRegex, splatVariableRegex, escapeRegex, addGroupForTo, addVariablesInTo, compile, recogniseIn, extractParamsForFromAfter;
+    variableRegex = /(\:([a-z\-_]+))/gi;
+    splatVariableRegex = /(\:([a-z\-_]+)\\\*)/gi;
+    escapeRegex = function(pattern) {
+        return pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+    };
+    exports.table = function() {
+        var self = this;
+        var rows;
+        rows = [];
+        return {
+            add: function(pattern, route) {
+                var self = this;
+                return rows.push({
+                    pattern: pattern,
+                    route: route
+                });
+            },
+            compile: function() {
+                var self = this;
+                return exports.compile(rows);
+            }
+        };
+    };
+    exports.compile = function(routeTable) {
+        var self = this;
+        var groups, regexen, gen1_items, gen2_i, row;
+        groups = [];
+        regexen = [];
+        gen1_items = routeTable;
+        for (gen2_i = 0; gen2_i < gen1_items.length; ++gen2_i) {
+            row = gen1_items[gen2_i];
+            addGroupForTo(row, groups);
+            regexen.push("(" + compile(row.pattern) + ")");
+        }
+        return {
+            regex: new RegExp("^(" + regexen.join("|") + ")$"),
+            groups: groups,
+            recognise: function(input) {
+                var self = this;
+                return recogniseIn(self.regex.exec(input) || [], self.groups);
+            }
+        };
+    };
+    addGroupForTo = function(row, groups) {
+        var group;
+        group = {
+            route: row.route,
+            params: []
+        };
+        groups.push(group);
+        return addVariablesInTo(row.pattern, group);
+    };
+    addVariablesInTo = function(pattern, group) {
+        var match;
+        while (match = variableRegex.exec(pattern)) {
+            group.params.push(match[2]);
+        }
+        return void 0;
+    };
+    compile = function(pattern) {
+        return escapeRegex(pattern).replace(splatVariableRegex, "(.+)").replace(variableRegex, "([^\\/]+)");
+    };
+    exports.compilePattern = function(pattern) {
+        var self = this;
+        return compile(pattern);
+    };
+    recogniseIn = function(match, groups) {
+        var g, i, gen3_forResult;
+        g = 0;
+        for (i = 2; i < match.length; i = i + groups[g - 1].params.length + 1) {
+            gen3_forResult = void 0;
+            if (function(i) {
+                if (typeof match[i] !== "undefined") {
+                    gen3_forResult = {
+                        route: groups[g].route,
+                        params: extractParamsForFromAfter(groups[g], match, i)
+                    };
+                    return true;
+                }
+                g = g + 1;
+            }(i)) {
+                return gen3_forResult;
+            }
+        }
+        return false;
+    };
+    extractParamsForFromAfter = function(group, match, i) {
+        var params, p;
+        params = [];
+        for (p = 0; p < group.params.length; p = p + 1) {
+            params.push([ group.params[p], decodeURIComponent(match[p + i + 1]) ]);
+        }
+        return params;
+    };
+}).call(this);
+},{}],23:[function(require,module,exports){
 var createElement = require("./vdom/create-element.js")
 
 module.exports = createElement
 
-},{"./vdom/create-element.js":25}],22:[function(require,module,exports){
+},{"./vdom/create-element.js":27}],24:[function(require,module,exports){
 var diff = require("./vtree/diff.js")
 
 module.exports = diff
 
-},{"./vtree/diff.js":43}],23:[function(require,module,exports){
+},{"./vtree/diff.js":45}],25:[function(require,module,exports){
 var patch = require("./vdom/patch.js")
 
 module.exports = patch
 
-},{"./vdom/patch.js":28}],24:[function(require,module,exports){
+},{"./vdom/patch.js":30}],26:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook.js")
 
@@ -1668,7 +2387,7 @@ function getPrototype(value) {
     }
 }
 
-},{"../vnode/is-vhook.js":34,"is-object":20}],25:[function(require,module,exports){
+},{"../vnode/is-vhook.js":36,"is-object":21}],27:[function(require,module,exports){
 var document = require("global/document")
 
 var applyProperties = require("./apply-properties")
@@ -1716,7 +2435,7 @@ function createElement(vnode, opts) {
     return node
 }
 
-},{"../vnode/handle-thunk.js":32,"../vnode/is-vnode.js":35,"../vnode/is-vtext.js":36,"../vnode/is-widget.js":37,"./apply-properties":24,"global/document":3}],26:[function(require,module,exports){
+},{"../vnode/handle-thunk.js":34,"../vnode/is-vnode.js":37,"../vnode/is-vtext.js":38,"../vnode/is-widget.js":39,"./apply-properties":26,"global/document":3}],28:[function(require,module,exports){
 // Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
 // We don't want to read all of the DOM nodes in the tree so we use
 // the in-order tree indexing to eliminate recursion down certain branches.
@@ -1803,7 +2522,7 @@ function ascending(a, b) {
     return a > b ? 1 : -1
 }
 
-},{}],27:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var applyProperties = require("./apply-properties")
 
 var isWidget = require("../vnode/is-widget.js")
@@ -1956,7 +2675,7 @@ function replaceRoot(oldRoot, newRoot) {
     return newRoot;
 }
 
-},{"../vnode/is-widget.js":37,"../vnode/vpatch.js":40,"./apply-properties":24,"./update-widget":29}],28:[function(require,module,exports){
+},{"../vnode/is-widget.js":39,"../vnode/vpatch.js":42,"./apply-properties":26,"./update-widget":31}],30:[function(require,module,exports){
 var document = require("global/document")
 var isArray = require("x-is-array")
 
@@ -2038,7 +2757,7 @@ function patchIndices(patches) {
     return indices
 }
 
-},{"./create-element":25,"./dom-index":26,"./patch-op":27,"global/document":3,"x-is-array":44}],29:[function(require,module,exports){
+},{"./create-element":27,"./dom-index":28,"./patch-op":29,"global/document":3,"x-is-array":46}],31:[function(require,module,exports){
 var isWidget = require("../vnode/is-widget.js")
 
 module.exports = updateWidget
@@ -2055,7 +2774,7 @@ function updateWidget(a, b) {
     return false
 }
 
-},{"../vnode/is-widget.js":37}],30:[function(require,module,exports){
+},{"../vnode/is-widget.js":39}],32:[function(require,module,exports){
 'use strict';
 
 module.exports = SoftSetHook;
@@ -2074,7 +2793,7 @@ SoftSetHook.prototype.hook = function (node, propertyName) {
     }
 };
 
-},{}],31:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 'use strict';
 
 var split = require('browser-split');
@@ -2130,7 +2849,7 @@ function parseTag(tag, props) {
     return props.namespace ? tagName : tagName.toUpperCase();
 }
 
-},{"browser-split":2}],32:[function(require,module,exports){
+},{"browser-split":2}],34:[function(require,module,exports){
 var isVNode = require("./is-vnode")
 var isVText = require("./is-vtext")
 var isWidget = require("./is-widget")
@@ -2172,14 +2891,14 @@ function renderThunk(thunk, previous) {
     return renderedThunk
 }
 
-},{"./is-thunk":33,"./is-vnode":35,"./is-vtext":36,"./is-widget":37}],33:[function(require,module,exports){
+},{"./is-thunk":35,"./is-vnode":37,"./is-vtext":38,"./is-widget":39}],35:[function(require,module,exports){
 module.exports = isThunk
 
 function isThunk(t) {
     return t && t.type === "Thunk"
 }
 
-},{}],34:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 module.exports = isHook
 
 function isHook(hook) {
@@ -2188,7 +2907,7 @@ function isHook(hook) {
        typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
 }
 
-},{}],35:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualNode
@@ -2197,7 +2916,7 @@ function isVirtualNode(x) {
     return x && x.type === "VirtualNode" && x.version === version
 }
 
-},{"./version":38}],36:[function(require,module,exports){
+},{"./version":40}],38:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = isVirtualText
@@ -2206,17 +2925,17 @@ function isVirtualText(x) {
     return x && x.type === "VirtualText" && x.version === version
 }
 
-},{"./version":38}],37:[function(require,module,exports){
+},{"./version":40}],39:[function(require,module,exports){
 module.exports = isWidget
 
 function isWidget(w) {
     return w && w.type === "Widget"
 }
 
-},{}],38:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 module.exports = "2"
 
-},{}],39:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 var version = require("./version")
 var isVNode = require("./is-vnode")
 var isWidget = require("./is-widget")
@@ -2290,7 +3009,7 @@ function VirtualNode(tagName, properties, children, key, namespace) {
 VirtualNode.prototype.version = version
 VirtualNode.prototype.type = "VirtualNode"
 
-},{"./is-thunk":33,"./is-vhook":34,"./is-vnode":35,"./is-widget":37,"./version":38}],40:[function(require,module,exports){
+},{"./is-thunk":35,"./is-vhook":36,"./is-vnode":37,"./is-widget":39,"./version":40}],42:[function(require,module,exports){
 var version = require("./version")
 
 VirtualPatch.NONE = 0
@@ -2314,7 +3033,7 @@ function VirtualPatch(type, vNode, patch) {
 VirtualPatch.prototype.version = version
 VirtualPatch.prototype.type = "VirtualPatch"
 
-},{"./version":38}],41:[function(require,module,exports){
+},{"./version":40}],43:[function(require,module,exports){
 var version = require("./version")
 
 module.exports = VirtualText
@@ -2326,7 +3045,7 @@ function VirtualText(text) {
 VirtualText.prototype.version = version
 VirtualText.prototype.type = "VirtualText"
 
-},{"./version":38}],42:[function(require,module,exports){
+},{"./version":40}],44:[function(require,module,exports){
 var isObject = require("is-object")
 var isHook = require("../vnode/is-vhook")
 
@@ -2386,7 +3105,7 @@ function getPrototype(value) {
   }
 }
 
-},{"../vnode/is-vhook":34,"is-object":20}],43:[function(require,module,exports){
+},{"../vnode/is-vhook":36,"is-object":21}],45:[function(require,module,exports){
 var isArray = require("x-is-array")
 
 var VPatch = require("../vnode/vpatch")
@@ -2815,7 +3534,7 @@ function appendPatch(apply, patch) {
     }
 }
 
-},{"../vnode/handle-thunk":32,"../vnode/is-thunk":33,"../vnode/is-vnode":35,"../vnode/is-vtext":36,"../vnode/is-widget":37,"../vnode/vpatch":40,"./diff-props":42,"x-is-array":44}],44:[function(require,module,exports){
+},{"../vnode/handle-thunk":34,"../vnode/is-thunk":35,"../vnode/is-vnode":37,"../vnode/is-vtext":38,"../vnode/is-widget":39,"../vnode/vpatch":42,"./diff-props":44,"x-is-array":46}],46:[function(require,module,exports){
 var nativeIsArray = Array.isArray
 var toString = Object.prototype.toString
 
@@ -2825,43 +3544,37 @@ function isArray(obj) {
     return toString.call(obj) === "[object Array]"
 }
 
-},{}],45:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 'use strict';
 
-var _jsxFileName = '/Users/paulcampbell/_src/hyperdom_boilerplate/src/app.js';
+var _jsxFileName = '/Users/paulcampbell/_src/hyperdom_boilerplate/src/app.jsx';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /** @jsx hyperdom.jsx */
 var hyperdom = require('hyperdom');
+var router = require('hyperdom-router');
 
-var tabs = [{ name: 'Home', renderMethod: 'renderHome', id: 'home' }, { name: 'Contacts', renderMethod: 'renderContacts', id: 'contacts' }];
+var routes = {
+  home: router.route('/'),
+  contacts: router.route('/contacts')
+};
 
 var App = function () {
   function App() {
     _classCallCheck(this, App);
 
-    this.currentTab = this.findTabById('home');
+    router.start({ history: router.hash });
+
     this.contacts = [{ name: 'Jimmy' }, { name: 'Robert' }, { name: 'John Paul' }, { name: 'John' }];
   }
-
-  App.prototype.setTab = function setTab(tabId) {
-    this.currentTab = this.findTabById(tabId);
-    history.pushState({ tab: tabId }, this.currentTab.title, '/' + tabId);
-  };
-
-  App.prototype.findTabById = function findTabById(tabId) {
-    return tabs.filter(function (tab) {
-      return tab.id === tabId;
-    })[0];
-  };
 
   App.prototype.renderHome = function renderHome() {
     return hyperdom.jsx(
       'div',
       { 'class': 'homeTab', __source: {
           fileName: _jsxFileName,
-          lineNumber: 30
+          lineNumber: 23
         }
       },
       hyperdom.jsx(
@@ -2869,7 +3582,7 @@ var App = function () {
         {
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 31
+            lineNumber: 24
           }
         },
         'Hyperdom Boilerplate'
@@ -2879,7 +3592,7 @@ var App = function () {
         {
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 32
+            lineNumber: 25
           }
         },
         'Now then'
@@ -2892,7 +3605,7 @@ var App = function () {
       'div',
       { 'class': 'contactsTab', __source: {
           fileName: _jsxFileName,
-          lineNumber: 37
+          lineNumber: 30
         }
       },
       hyperdom.jsx(
@@ -2900,7 +3613,7 @@ var App = function () {
         {
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 38
+            lineNumber: 31
           }
         },
         'Contacts'
@@ -2909,7 +3622,7 @@ var App = function () {
         'ul',
         { 'class': 'contactsList', __source: {
             fileName: _jsxFileName,
-            lineNumber: 39
+            lineNumber: 32
           }
         },
         this.contacts.map(function (c) {
@@ -2917,26 +3630,13 @@ var App = function () {
             'li',
             { 'class': 'contactsList-contact', __source: {
                 fileName: _jsxFileName,
-                lineNumber: 41
+                lineNumber: 35
               }
             },
             c.name
           );
         })
       )
-    );
-  };
-
-  App.prototype.renderPage = function renderPage(currentTab) {
-    return hyperdom.jsx(
-      'div',
-      {
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 49
-        }
-      },
-      this[currentTab.renderMethod]()
     );
   };
 
@@ -2948,7 +3648,7 @@ var App = function () {
       {
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 55
+          lineNumber: 43
         }
       },
       hyperdom.jsx(
@@ -2956,7 +3656,7 @@ var App = function () {
         {
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 56
+            lineNumber: 44
           }
         },
         hyperdom.jsx(
@@ -2964,7 +3664,7 @@ var App = function () {
           {
             __source: {
               fileName: _jsxFileName,
-              lineNumber: 57
+              lineNumber: 45
             }
           },
           hyperdom.jsx(
@@ -2972,44 +3672,33 @@ var App = function () {
             {
               __source: {
                 fileName: _jsxFileName,
-                lineNumber: 58
+                lineNumber: 46
               }
             },
-            hyperdom.jsx(
-              'a',
-              { 'class': 'homeLink', href: '#', onclick: function onclick(ev) {
-                  ev.preventDefault();_this.setTab('home');
-                }, __source: {
-                  fileName: _jsxFileName,
-                  lineNumber: 58
-                }
-              },
-              'Home'
-            )
+            ' ',
+            routes.home().link({ class: 'homeLink' }, 'Home'),
+            ' '
           ),
           hyperdom.jsx(
             'li',
             {
               __source: {
                 fileName: _jsxFileName,
-                lineNumber: 59
+                lineNumber: 47
               }
             },
-            hyperdom.jsx(
-              'a',
-              { 'class': 'contactsLink', href: '#', onclick: function onclick(ev) {
-                  ev.preventDefault();_this.setTab('contacts');
-                }, __source: {
-                  fileName: _jsxFileName,
-                  lineNumber: 59
-                }
-              },
-              'Contacts'
-            )
+            ' ',
+            routes.contacts().link({ class: 'contactsLink' }, 'Contacts'),
+            ' '
           )
         )
       ),
-      this.renderPage(this.currentTab)
+      routes.home(function () {
+        return _this.renderHome();
+      }),
+      routes.contacts(function () {
+        return _this.renderContacts();
+      })
     );
   };
 
@@ -3018,7 +3707,7 @@ var App = function () {
 
 module.exports = App;
 
-},{"hyperdom":7}],46:[function(require,module,exports){
+},{"hyperdom":8,"hyperdom-router":4}],48:[function(require,module,exports){
 'use strict';
 
 var App = require('./app');
@@ -3026,5 +3715,5 @@ var hyperdom = require('hyperdom');
 
 hyperdom.append(document.body, new App({}));
 
-},{"./app":45,"hyperdom":7}]},{},[46])
+},{"./app":47,"hyperdom":8}]},{},[48])
 //# sourceMappingURL=index.max.js.map
