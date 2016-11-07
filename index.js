@@ -3565,7 +3565,6 @@ var App = function () {
     _classCallCheck(this, App);
 
     router.start({ history: router.hash });
-
     this.contacts = [{ name: 'Jimmy' }, { name: 'Robert' }, { name: 'John Paul' }, { name: 'John' }];
   }
 
@@ -3574,7 +3573,7 @@ var App = function () {
       'div',
       { 'class': 'homeTab', __source: {
           fileName: _jsxFileName,
-          lineNumber: 23
+          lineNumber: 22
         }
       },
       hyperdom.jsx(
@@ -3582,7 +3581,7 @@ var App = function () {
         {
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 24
+            lineNumber: 23
           }
         },
         'Hyperdom Boilerplate'
@@ -3592,7 +3591,7 @@ var App = function () {
         {
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 25
+            lineNumber: 24
           }
         },
         'Now then'
@@ -3605,7 +3604,7 @@ var App = function () {
       'div',
       { 'class': 'contactsTab', __source: {
           fileName: _jsxFileName,
-          lineNumber: 30
+          lineNumber: 29
         }
       },
       hyperdom.jsx(
@@ -3613,7 +3612,7 @@ var App = function () {
         {
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 31
+            lineNumber: 30
           }
         },
         'Contacts'
@@ -3622,7 +3621,7 @@ var App = function () {
         'ul',
         { 'class': 'contactsList', __source: {
             fileName: _jsxFileName,
-            lineNumber: 32
+            lineNumber: 31
           }
         },
         this.contacts.map(function (c) {
@@ -3630,7 +3629,7 @@ var App = function () {
             'li',
             { 'class': 'contactsList-contact', __source: {
                 fileName: _jsxFileName,
-                lineNumber: 35
+                lineNumber: 34
               }
             },
             c.name
@@ -3648,7 +3647,7 @@ var App = function () {
       {
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 43
+          lineNumber: 42
         }
       },
       hyperdom.jsx(
@@ -3656,7 +3655,7 @@ var App = function () {
         {
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 44
+            lineNumber: 43
           }
         },
         hyperdom.jsx(
@@ -3664,7 +3663,7 @@ var App = function () {
           {
             __source: {
               fileName: _jsxFileName,
-              lineNumber: 45
+              lineNumber: 44
             }
           },
           hyperdom.jsx(
@@ -3672,7 +3671,7 @@ var App = function () {
             {
               __source: {
                 fileName: _jsxFileName,
-                lineNumber: 46
+                lineNumber: 45
               }
             },
             ' ',
@@ -3684,7 +3683,7 @@ var App = function () {
             {
               __source: {
                 fileName: _jsxFileName,
-                lineNumber: 47
+                lineNumber: 46
               }
             },
             ' ',
