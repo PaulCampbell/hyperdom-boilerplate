@@ -1,25 +1,22 @@
 /** @jsx hyperdom.jsx */
 const hyperdom = require('hyperdom');
+const router = require('hyperdom-router');
 
-const tabs =  [
-  { name: 'Home', renderMethod: 'renderHome', id: 'home' },
-  { name: 'Contacts', renderMethod: 'renderContacts', id: 'contacts' }
-]
+const routes = {
+  home:  router.route('/'),
+  contacts: router.route('/contacts'),
+};
 
 class App {
   constructor() {
-    this.setTab('home');
+    router.start({history: router.hash});
+
     this.contacts = [
       { name: 'Jimmy' },
       { name: 'Robert' },
       { name: 'John Paul' },
       { name: 'John' },
     ]
-  }
-
-  setTab(tabId) {
-    this.currentTab = tabs.filter((tab) => tab.id === tabId)[0];
-    history.pushState({ tab: tabId }, this.currentTab.title, `/${tabId}`);
   }
 
   renderHome() {
@@ -46,11 +43,12 @@ class App {
     return <div>
       <nav>
         <ul>
-          <li><a class='homeLink' href="#" onclick={(ev)=> { ev.preventDefault(); this.setTab('home'); }}>Home</a></li>
-          <li><a class='contactsLink' href="#" onclick={(ev)=> { ev.preventDefault(); this.setTab('contacts'); }}>Contacts</a></li>
+          <li> { routes.home().link({ class: 'homeLink'}, 'Home') } </li>
+          <li> { routes.contacts().link({ class: 'contactsLink'}, 'Contacts') } </li>
         </ul>
       </nav>
-      { this[this.currentTab.renderMethod]() }
+      { routes.home(() => { return this.renderHome(); }) }
+      { routes.contacts(() => { return this.renderContacts(); }) }
     </div>
   }
 }
