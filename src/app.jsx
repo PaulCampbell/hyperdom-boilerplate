@@ -10,7 +10,6 @@ const routes = {
 class App {
   constructor() {
     router.start({history: router.hash});
-
     this.contacts = [
       { name: 'Jimmy' },
       { name: 'Robert' },
