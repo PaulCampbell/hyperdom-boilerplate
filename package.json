@@ -29,6 +29,8 @@
     "less": "^2.7.1",
     "live-server": "^1.1.0",
     "mocha": "^3.1.0",
+    "nodemon": "^1.11.0",
+    "sw-precache": "^4.2.1",
     "uglifyjs": "^2.4.10",
     "watchify": "^3.7.0"
   },
@@ -36,7 +38,8 @@
     "test": "karma start",
     "watch-js": "watchify src/index.js -v --debug --extension .jsx -t babelify -o 'exorcist dist/index.max.js.map > dist/index.js'",
     "watch-css": "catw -c 'lessc -' 'src/styles/*.less' -o dist/bundle.css -v",
-    "watch": "mkdir -p dist && cp src/index.html dist/index.html && npm run watch-css | npm run watch-js",
+    "watch-sw": "nodemon --watch dist --ignore dist/service-worker.js --exec \"node_modules/sw-precache/cli.js --root=dist --config=sw-precache-config.js\"",
+    "watch": "mkdir -p dist && cp src/service-worker-registration.js dist/service-worker-registration.js && cp src/index.html dist/index.html && npm run watch-css | npm run watch-js | npm run watch-sw",
     "start": "npm run watch | live-server ./dist",
     "deploy": "gh-pages -d dist"
   },
